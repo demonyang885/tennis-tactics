@@ -86,3 +86,14 @@
 - The final production build passed after polish, including TypeScript, Vite, Sites build preparation, and all 28 protected mobile runtime integrity checks.
 
 final result: passed
+
+## Content-first tactics expansion — 2026-09-09
+
+- Captured and inspected the live iPhone and Pixel 10 catalogue, the new net-play combination list, combination route, stage cards, expanded opponent-response state, focused response animation, single-tactic player, and full guide in the Codex in-app browser.
+- The catalogue now contains 21 single tactics, 8 combinations, and 16 response variants. Three new single tactics and two combinations form a clearly labelled net-play series.
+- The single-tactic player now pairs the animated step with a persistent current decision and memory cue. Step navigation was checked mid-animation; the decision changed with the displayed phase without clipping either device.
+- Combination details now show a compact match path, then separate each stage into an execution cue and a visible signal for continuing. Response variants expand in place and open a focused excerpt of the relevant base animation.
+- [P2, resolved] A focused response animation initially reused the first decision from its full source tactic while the court caption showed the later excerpt. Preview decisions now derive from the rewritten excerpt frames, so the court caption and current-decision card describe the same moment.
+- Replaced eight legacy “完成！” endings with continued preparation or observation cues so the animation does not imply the rally or decision process ends with the pattern.
+- Added a typed future-content entry file, authoring standard, and build-time validation for complete guides, animation timing and coordinates, combination references, transition signals, and response variants.
+- Final iPhone and Pixel 10 captures showed no clipped header, route labels, playback controls, decision content, or bottom navigation overlap.

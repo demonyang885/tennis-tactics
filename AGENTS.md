@@ -5,7 +5,9 @@
 - The user now asks for an appropriate original UI; external mini-program UI references are deferred. Use the existing prototype as the working starting point, not as a strict visual clone.
 - Keep one core journey: select a match situation, open a tactic, watch the animation, and expand explanations as needed.
 - Prioritize readable tactic names and purposes, an unobstructed court, labelled playback controls, and concise progressive explanations. Do not reintroduce course routes, multiple difficulty filters, accounts, or scoring workflows.
-- Preserve all 18 tactics while adding individual context, decisions, alternatives, and practice guidance for young players who can already rally on a full court.
+- Preserve the current 21 tactics, 8 combinations, and 16 opponent-response variants while adding individual context, decisions, alternatives, and practice guidance for young players who can already rally on a full court.
+- Treat useful content and its presentation as the product core. Keep single-tactic displays synchronized around the ball path, current decision, memory cue, and full guide. Build combination displays around an explicit match path, execution cue, transition signal, and opponent-response variants.
+- Add new content through `src/content/next.ts`, follow `src/content/TACTIC_AUTHORING.md`, and keep the automated content validation enabled in the production build.
 
 ## Prototype Instructions
 
