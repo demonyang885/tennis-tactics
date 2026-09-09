@@ -97,3 +97,16 @@ final result: passed
 - Replaced eight legacy “完成！” endings with continued preparation or observation cues so the animation does not imply the rally or decision process ends with the pattern.
 - Added a typed future-content entry file, authoring standard, and build-time validation for complete guides, animation timing and coordinates, combination references, transition signals, and response variants.
 - Final iPhone and Pixel 10 captures showed no clipped header, route labels, playback controls, decision content, or bottom navigation overlap.
+
+## Interactive combination rally branch — 2026-09-09
+
+- Branch: `feature/interactive-combination-rally`. The public `main` build remains unchanged while this interaction is reviewed.
+- Replaced the linear combination handoff with a 19-node rally network. Every segment auto-plays, freezes on its final court state, then presents 2–3 full-width choices in “signal + action” form directly below the court.
+- The serve opening now stops as the return becomes visible, before the +1 action, so the first decision is made at the correct match moment. Every later choice inserts a short opponent-return bridge from the exact previous end positions into the selected tactic; the court no longer remounts or jumps between unrelated starts.
+- Verified a four-segment attacking route: serve +1 → deep approach → first volley deep → second volley to open court. The same court view continued immediately, and the route history retained all four choices.
+- Verified a separate three-segment net-defense route: dip at the net player's feet → lob behind → return to crosscourt rally. The next choice appeared again after each segment, confirming that the rally can loop instead of ending at a fixed stage.
+- “再看本段” replayed only the current segment without deleting history. Opening the secondary “思路” view paused the rally; returning kept the four-segment path and paused progress.
+- Choice focus moved to the decision heading when playback ended, and buttons exposed complete signal/action labels. A deliberate double-click advanced the route from segment 3 to segment 4 only, confirming that the next node cannot be added twice.
+- [P1, resolved] The iPhone home indicator initially covered the last choice because the app-specific FlowStack screen did not inherit a safe-area variable. The app root now owns the device safe-area value; all three buttons sit above the home indicator, while Pixel 10 continues to use its reserved navigation region.
+- Visually inspected completed choice states on iPhone and Pixel 10. Both show the court, decision prompt, full choice list, path history, replay, plan, and restart controls without clipping or overlap. Secondary controls reach at least 44 CSS pixels, and signal copy can wrap to two lines.
+- Browser console produced no warnings or errors through the tested paths. Content validation, runtime integrity, TypeScript production build, and Sites worker tests passed.

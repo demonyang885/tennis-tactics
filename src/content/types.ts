@@ -71,3 +71,24 @@ export type Combination = {
   stages: CombinationStage[];
   variants: CombinationVariant[];
 };
+
+export type RallyChoice = {
+  signal: string;
+  action: string;
+  nextNodeId: string;
+  intent: "稳住" | "进攻" | "变化";
+};
+
+export type RallyNode = {
+  id: string;
+  tacticId: string;
+  excerpt?: TacticExcerpt;
+  cue: string;
+  prompt: string;
+  choices: RallyChoice[];
+};
+
+export type InteractiveRally = {
+  combinationId: string;
+  startNodeId: string;
+};

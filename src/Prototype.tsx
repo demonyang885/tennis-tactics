@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, InfoCircledIcon, Cross2Icon, ReaderIcon, PlayIcon, PauseIcon, ResetIcon, TrackNextIcon, TrackPreviousIcon } from "@radix-ui/react-icons";
 import { BottomSheet, Carousel, FlowStack, MobileScroll, type FlowScreen } from "./mobile";
 
-import { categories, combinations, libraryStats, tacticGuides, tactics, type CategoryFilter } from "./content/library";
-import type { Combination, Moment, Point, Tactic, TacticExcerpt } from "./content/types";
+import { categories, combinations, interactiveRallies, libraryStats, rallyNodes, tacticGuides, tactics, type CategoryFilter } from "./content/library";
+import type { Combination, Moment, Point, RallyChoice, RallyNode, Tactic, TacticExcerpt } from "./content/types";
 function tacticMeta(tactic: Tactic) {
   return {
     category: tactic.category ?? "先稳住",
@@ -163,6 +163,77 @@ function combinationExample(id:string, excerpt?:TacticExcerpt):Tactic {
   return {...source,name:selected.name,excerpt:true,previewDecisions,duration:Math.round(Math.max(6,source.duration*span)*10)/10,
     frames:previewFrames};
 }
+
+type RallySegment={node:RallyNode;tactic:Tactic;action:string;intent:string};
+
+function connectRallySegments(previous:Tactic,next:Tactic,action:string):Tactic {
+  const bridgeDuration=.8,totalDuration=next.duration+bridgeDuration,bridgeEnd=bridgeDuration/totalDuration;
+  const previousEnd=previous.frames[previous.frames.length-1];
+  const frames:Moment[]=[
+    {...previousEnd,t:0,loft:0,caption:`选择「${action}」，先接上对手回球`},
+    ...next.frames.map((frame,index)=>({...frame,t:bridgeEnd+frame.t*(1-bridgeEnd),loft:index===0?Math.max(.28,frame.loft):frame.loft})),
+  ];
+  return {...next,duration:Math.round(totalDuration*10)/10,frames};
+}
+
+function InteractiveCombinationPlayer({ combination, openPlan }: { combination:Combination; openPlan:()=>void }) {
+  const rally=interactiveRallies.find(item=>item.combinationId===combination.id)!;
+  const nodes=new Map(rallyNodes.map(node=>[node.id,node]));
+  const openingNode=nodes.get(rally.startNodeId)!;
+  const toSegment=(node:RallyNode,action=combinationExample(node.tacticId,node.excerpt).name,intent="开局",previous?:Tactic):RallySegment=>{
+    const example=combinationExample(node.tacticId,node.excerpt);
+    return {node,tactic:previous?connectRallySegments(previous,example,action):example,action,intent};
+  };
+  const [current,setCurrent]=useState<RallySegment>(()=>toSegment(openingNode));
+  const [elapsed,setElapsed]=useState(0), [playing,setPlaying]=useState(true);
+  const [history,setHistory]=useState<{label:string;intent:string}[]>(()=>[{label:combinationExample(openingNode.tacticId,openingNode.excerpt).name,intent:"开局"}]);
+  const [selecting,setSelecting]=useState(false);
+  const choiceHeadingRef=useRef<HTMLHeadingElement>(null), selectingRef=useRef(false);
+  const finished=elapsed>=current.tactic.duration;
+  const progress=Math.min(100,(elapsed/current.tactic.duration)*100);
+  const decisions=current.tactic.previewDecisions??tacticGuides[current.tactic.id].decisions;
+  const currentDecision=decisions[Math.min(2,Math.floor((elapsed/current.tactic.duration)*3))];
+  const visibleHistory=history.slice(-6);
+
+  useEffect(()=>{
+    if(!playing)return;
+    let animation=0,previous=performance.now();
+    const tick=(now:number)=>{const delta=Math.min((now-previous)/1000,.1);previous=now;setElapsed(old=>Math.min(current.tactic.duration,old+delta));animation=requestAnimationFrame(tick);};
+    animation=requestAnimationFrame(tick);return()=>cancelAnimationFrame(animation);
+  },[playing,current.tactic.duration]);
+  useEffect(()=>{if(finished)setPlaying(false);},[finished]);
+  useEffect(()=>{if(finished)choiceHeadingRef.current?.focus();},[finished]);
+
+  const choose=(choice:RallyChoice)=>{
+    if(selectingRef.current)return;
+    selectingRef.current=true;setSelecting(true);
+    const nextNode=nodes.get(choice.nextNodeId)!;
+    setCurrent(toSegment(nextNode,choice.action,choice.intent,current.tactic));
+    setHistory(items=>[...items,{label:choice.action,intent:choice.intent}]);
+    setElapsed(0);setPlaying(true);
+    requestAnimationFrame(()=>{selectingRef.current=false;setSelecting(false);});
+  };
+  const replay=()=>{setElapsed(0);setPlaying(true);};
+  const restart=()=>{setCurrent(toSegment(openingNode));setHistory([{label:combinationExample(openingNode.tacticId,openingNode.excerpt).name,intent:"开局"}]);setElapsed(0);setPlaying(true);setSelecting(false);selectingRef.current=false;};
+
+  return <div className="interactive-rally-screen">
+    <Court tactic={current.tactic} elapsed={elapsed}/>
+    <div className={`rally-dock ${finished?"is-choosing":"is-playing"}`}>
+      <div className="rally-session-bar"><div><span className={finished?"is-ready":""}>{finished?"轮到你选择":"球路进行中"}</span><strong>回合第 {history.length} 段</strong></div><div className="rally-session-actions"><button onClick={()=>{setPlaying(false);openPlan();}}><ReaderIcon/><span>思路</span></button><button onClick={restart}><ResetIcon/><span>重开</span></button></div></div>
+      <Carousel className="rally-history" contentClassName="rally-history-track" ariaLabel="本回合的选择路径">{visibleHistory.map((item,index)=><div className={index===visibleHistory.length-1?"is-current":""} key={`${item.label}-${index}`}><span>{String(Math.max(1,history.length-5)+index).padStart(2,"0")}</span><strong>{item.label}</strong></div>)}</Carousel>
+      {finished?<div className="rally-choice-panel" aria-live="polite">
+        <div className="rally-choice-heading"><div><span>选择下一拍</span><h2 ref={choiceHeadingRef} tabIndex={-1}>{current.node.prompt}</h2></div><button onClick={replay}><ResetIcon/>再看本段</button></div>
+        <div className="rally-choice-grid">{current.node.choices.map((choice,index)=><button className="rally-choice-button" disabled={selecting} key={`${current.node.id}-${index}`} onClick={()=>choose(choice)} aria-label={`看到${choice.signal}，选择${choice.action}`}><span>{choice.intent}</span><strong>{choice.action}</strong><small>{choice.signal}</small><ChevronRightIcon/></button>)}</div>
+      </div>:<div className="rally-live-panel">
+        <div className="rally-live-top"><div><span>{current.intent}</span><strong>{current.action}</strong></div><button className="rally-pause" onClick={()=>setPlaying(value=>!value)}>{playing?<PauseIcon/>:<PlayIcon/>}<span>{playing?"暂停":"继续"}</span></button></div>
+        <p className="rally-response">{current.node.cue}</p>
+        <div className="rally-decision"><span>当前判断</span><p aria-live="polite">{currentDecision}</p></div>
+        <div className="rally-progress" aria-label={`本段播放进度 ${Math.round(progress)}%`}><i style={{width:`${progress}%`}}/></div>
+      </div>}
+    </div>
+  </div>;
+}
+
 function CombinationDetail({ combination, openTactic }: { combination:Combination; openTactic:(tactic:Tactic,contextLabel:string)=>void }) {
   const [variantOpen,setVariantOpen]=useState<number | null>(null);
   const openExample=(id:string,contextLabel:string,excerpt?:TacticExcerpt)=>openTactic(combinationExample(id,excerpt),contextLabel);
@@ -199,7 +270,7 @@ function TacticsList({ openTactic, openCombination }: { openTactic: (tactic: Tac
       <div className="catalogue-count"><span>{mode==="combinations"?"组合＋衍生选择":category === "全部" ? "全部战术" : category}</span><span>{mode==="combinations"?`${visibleCombinations.length} 组搭配`: `${visibleTactics.length} 个战术`}</span></div>
       <MobileScroll className="tactic-list-screen" key={`${mode}-${category}`}>
       <main className="tactics-grid" aria-label={`${category}${mode==="tactics"?"战术":"组合"}列表`}>
-        {mode==="combinations"?visibleCombinations.map((combination)=><button className="tactic-card combo-card" key={combination.id} onClick={()=>openCombination(combination)} aria-label={`${combination.name}，${combination.stages.length} 个阶段，${combination.variants.length} 种衍生选择`}><div className="card-copy"><div className="combo-card-label">{combination.series??combination.category} · 组合打法</div><h2>{combination.name}</h2><p className="card-purpose">{combination.goal}</p><div className="card-meta"><span>{combination.stages.length} 阶段搭配</span><span>{combination.variants.length} 种应变</span></div></div><ChevronRightIcon className="card-arrow"/></button>):visibleTactics.map(tactic => {
+        {mode==="combinations"?visibleCombinations.map((combination)=><button className="tactic-card combo-card" key={combination.id} onClick={()=>openCombination(combination)} aria-label={`开始${combination.name}互动对打，自动播放第一段，每段提供二到三个现场选择`}><div className="card-copy"><div className="combo-card-label">{combination.series??combination.category} · 互动对打</div><h2>{combination.name}</h2><p className="card-purpose">{combination.goal}</p><div className="card-meta"><span>自动播放首段</span><span>每段 2–3 个选择</span></div></div><ChevronRightIcon className="card-arrow"/></button>):visibleTactics.map(tactic => {
           const meta = tacticMeta(tactic);
           return <button key={tactic.id} className="tactic-card" onClick={event => openTactic(tactic,event)} aria-label={`${tactic.name}，${tactic.duration}秒，${meta.category}，${meta.level}`}>
             <div className="card-picture" aria-hidden="true"><img src="/assets/tennis/tennis-ball.png" alt="" draggable={false}/><span>{String(tactics.indexOf(tactic)+1).padStart(2,"0")}</span></div>
@@ -214,7 +285,8 @@ function TacticsList({ openTactic, openCombination }: { openTactic: (tactic: Tac
 export default function Prototype() {
   const [info,setInfo]=useState(false);
   const makeDetail=(tactic:Tactic,contextLabel?:string):FlowScreen=>({id:tactic.id,title:tactic.name,headerHeight:62,header:flow=><AppHeader title={tactic.name} back={flow.pop}/>,render:()=> <TacticPlayer tactic={tactic} contextLabel={contextLabel}/>});
-  const makeCombination=(combination:Combination):FlowScreen=>({id:combination.id,title:combination.name,headerHeight:62,header:flow=><AppHeader title={combination.name} back={flow.pop} menu={()=>setInfo(true)}/>,render:flow=><CombinationDetail combination={combination} openTactic={(tactic,contextLabel)=>flow.push(makeDetail(tactic,contextLabel))}/>});
-  const initial:FlowScreen={id:"tactics",title:"网球战术",headerHeight:82,header:()=> <AppHeader title="网球战术" menu={()=>setInfo(true)}/>,render:flow=><TacticsList openTactic={(tactic,event)=>{event.currentTarget.blur();flow.push(makeDetail(tactic));}} openCombination={combination=>flow.push(makeCombination(combination))}/>};
-  return <div className="tennis-app"><FlowStack initial={initial}/><BottomSheet open={info} onOpenChange={setInfo} title="网球战术演示" description="用球路和跑位，看懂青少年单打战术。" snap={.56}><div className="about-demo"><p><strong>{libraryStats.tactics} 个单项战术、{libraryStats.combinations} 组搭配、{libraryStats.variants} 种应变</strong>。先选比赛情境，再看球路与临场选择；组合中的演示聚焦对应阶段。</p><p>蓝色是我方，红色是对手，黄色是网球；亮线为当前一拍，淡线为已完成球路，圆环提示下一落点。</p><p className="about-note">内容适合已能进行全场对打的青少年。若仍使用红、橙或绿球，请按球场大小和实际能力调整目标；战术示意不保证得分，也不能替代教练现场判断。</p><p className="about-source">教学原则参考 ITF、LTA 和 USTA 公开资料；战术组合与练习为教学化编排。</p><button className="sheet-done" onClick={()=>setInfo(false)}>知道了</button></div></BottomSheet></div>;
+  function makeCombination(combination:Combination):FlowScreen {return {id:`${combination.id}-plan`,title:combination.name,headerHeight:62,header:flow=><AppHeader title={`${combination.name} · 思路`} back={flow.pop} menu={()=>setInfo(true)}/>,render:flow=><CombinationDetail combination={combination} openTactic={(tactic,contextLabel)=>flow.push(makeDetail(tactic,contextLabel))}/>};}
+  function makeInteractive(combination:Combination):FlowScreen {return {id:`${combination.id}-rally`,title:combination.name,headerHeight:62,header:flow=><AppHeader title={combination.name} back={flow.pop} menu={()=>setInfo(true)}/>,render:flow=><InteractiveCombinationPlayer combination={combination} openPlan={()=>flow.push(makeCombination(combination))}/>};}
+  const initial:FlowScreen={id:"tactics",title:"网球战术",headerHeight:82,header:()=> <AppHeader title="网球战术" menu={()=>setInfo(true)}/>,render:flow=><TacticsList openTactic={(tactic,event)=>{event.currentTarget.blur();flow.push(makeDetail(tactic));}} openCombination={combination=>flow.push(makeInteractive(combination))}/>};
+  return <div className="tennis-app"><FlowStack initial={initial}/><BottomSheet open={info} onOpenChange={setInfo} title="网球战术演示" description="用球路和跑位，看懂青少年单打战术。" snap={.56}><div className="about-demo"><p><strong>{libraryStats.tactics} 个单项战术、{libraryStats.combinations} 组互动对打、{libraryStats.variants} 种应变</strong>。单项战术聚焦一招；组合模式会在每段球路后让你按场上信号选择下一拍，并持续这一回合。</p><p>蓝色是我方，红色是对手，黄色是网球；亮线为当前一拍，淡线为已完成球路，圆环提示下一落点。</p><p className="about-note">内容适合已能进行全场对打的青少年。若仍使用红、橙或绿球，请按球场大小和实际能力调整目标；战术示意不保证得分，也不能替代教练现场判断。</p><p className="about-source">教学原则参考 ITF、LTA 和 USTA 公开资料；战术组合与练习为教学化编排。</p><button className="sheet-done" onClick={()=>setInfo(false)}>知道了</button></div></BottomSheet></div>;
 }

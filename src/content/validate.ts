@@ -1,4 +1,4 @@
-import type { Combination, Tactic, TacticGuide } from "./types";
+import type { Combination, InteractiveRally, RallyNode, Tactic, TacticGuide } from "./types";
 
 const requiredText = ["goal", "when", "cue", "mistake"] as const;
 
@@ -10,6 +10,8 @@ export function validateTennisLibrary(
   tactics: Tactic[],
   guides: Record<string, TacticGuide>,
   combinations: Combination[],
+  rallyNodes: RallyNode[],
+  interactiveRallies: InteractiveRally[],
 ) {
   const tacticIds = new Set<string>();
 
@@ -81,9 +83,46 @@ export function validateTennisLibrary(
     });
   }
 
+  const rallyNodeIds = new Set<string>();
+  for (const node of rallyNodes) {
+    assert(!rallyNodeIds.has(node.id), `duplicate rally node id: ${node.id}`);
+    rallyNodeIds.add(node.id);
+    assert(tacticIds.has(node.tacticId), `${node.id} references missing tactic ${node.tacticId}`);
+    assert(node.cue.trim().length >= 12, `${node.id}.cue needs an executable action`);
+    assert(node.prompt.trim().length >= 8, `${node.id}.prompt needs a clear question`);
+    assert(node.choices.length >= 2 && node.choices.length <= 3, `${node.id} needs two or three choices`);
+    assert(node.choices.some(choice=>choice.intent==="稳住"), `${node.id} needs at least one steady option`);
+    node.choices.forEach((choice,index)=>{
+      assert(choice.signal.trim().length >= 10, `${node.id} choice ${index+1} needs a visible match signal`);
+      assert(choice.action.trim().length >= 4, `${node.id} choice ${index+1} needs a clear action`);
+    });
+    if(node.excerpt){
+      const tactic=tactics.find(item=>item.id===node.tacticId)!;
+      const from=node.excerpt.fromFrame??0,to=node.excerpt.toFrame??tactic.frames.length-1;
+      assert(from>=0&&to<tactic.frames.length&&from<to,`${node.id} has an invalid tactic excerpt`);
+    }
+  }
+  for (const node of rallyNodes) {
+    node.choices.forEach(choice=>assert(rallyNodeIds.has(choice.nextNodeId),`${node.id} points to missing rally node ${choice.nextNodeId}`));
+  }
+
+  const interactiveCombinationIds=new Set<string>();
+  interactiveRallies.forEach(rally=>{
+    assert(!interactiveCombinationIds.has(rally.combinationId),`duplicate interactive rally for ${rally.combinationId}`);
+    interactiveCombinationIds.add(rally.combinationId);
+    assert(combinationIds.has(rally.combinationId),`interactive rally references missing combination ${rally.combinationId}`);
+    assert(rallyNodeIds.has(rally.startNodeId),`${rally.combinationId} has missing start node ${rally.startNodeId}`);
+  });
+  combinations.forEach(combination=>assert(interactiveCombinationIds.has(combination.id),`${combination.id} has no interactive rally`));
+
+  const reachable=new Set<string>(), queue=interactiveRallies.map(rally=>rally.startNodeId);
+  while(queue.length){const id=queue.shift()!;if(reachable.has(id))continue;reachable.add(id);rallyNodes.find(node=>node.id===id)!.choices.forEach(choice=>queue.push(choice.nextNodeId));}
+  rallyNodes.forEach(node=>assert(reachable.has(node.id),`${node.id} is unreachable from every combination start`));
+
   return {
     tactics: tactics.length,
     combinations: combinations.length,
     variants: combinations.reduce((total, combination) => total + combination.variants.length, 0),
+    rallyNodes: rallyNodes.length,
   };
 }
