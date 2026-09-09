@@ -23,8 +23,9 @@ test("prepared artifact contains the deployed entry points", async () => {
   const index = await readFile(path.join(output, "index.html"), "utf8");
   const fallback = await readFile(path.join(output, "404.html"), "utf8");
   const version = JSON.parse(await readFile(path.join(output, "version.json"), "utf8"));
+  const escapedBasePath = version.basePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   await stat(path.join(output, ".nojekyll"));
-  assert.match(index, /\/tennis-tactics\/assets\//);
+  assert.equal(version.basePath, normalizeBasePath(version.basePath));
+  assert.match(index, new RegExp(`${escapedBasePath}assets/`));
   assert.equal(fallback, index);
-  assert.equal(version.basePath, "/tennis-tactics/");
 });
