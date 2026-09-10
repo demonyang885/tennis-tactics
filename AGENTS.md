@@ -1,5 +1,14 @@
 # Mobile Prototype Agent Guide
 
+## Current Product Direction — 2026-09-10
+
+- Continue development on the user's Mac mini. `MACMINI_HANDOFF.md` records the transfer state and `docs/court-board/` contains the selected design, references, and implementation contract.
+- The user authorized reproducing and adapting the Court Canvas Apple app's tactical whiteboard as the core of this product. Prioritize making editing, continuous playback, saved drafts, and tactic-to-drill usage work end to end.
+- Theme 1 (`docs/court-board/theme-1-coach.png`) is provisionally selected. The user explicitly deferred final theme decisions and authorized implementation now; do not wait for another design selection or make three implemented themes.
+- Training means systematic on-court tactic execution drills: fixed feed, next-ball continuation, variable feed, and conditioned live play. It does not mean a matching quiz.
+- Work on `feature/court-canvas-tactics-board`, based on interactive-preview commit `5345230`. Keep the existing tactic library and interactive combinations working. Keep source `main` and the stable deployment unchanged; publish the independent preview only after the new version passes validation.
+- Preserve the runtime boundaries below. UI belongs in `src/Prototype.tsx` and `src/prototype.css`; reusable board logic belongs in `src/board/`.
+
 ## Current Product Direction — 2026-09-08
 
 - The user now asks for an appropriate original UI; external mini-program UI references are deferred. Use the existing prototype as the working starting point, not as a strict visual clone.
