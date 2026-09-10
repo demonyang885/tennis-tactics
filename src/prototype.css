@@ -42,6 +42,8 @@
 .card-arrow { flex:none; width:16px; height:16px; color:#80917f; }
 .combo-card { min-height:142px; padding:17px; }
 .combo-card-label { margin-bottom:6px; color:#5a7055; font-size:11px; line-height:16px; font-weight:600; }
+.combo-card.is-decision-practice { border-color:#c8dabc; box-shadow:0 7px 20px rgb(58 94 58 / 7%); }
+.combo-card.is-decision-practice .combo-card-label { color:#315f3d; font-weight:750; }
 .card-series { display:inline-flex; align-items:center; min-height:20px; margin-bottom:5px; padding:2px 7px; border-radius:999px; background:#e9f2df; color:#43603b; font-size:11px; line-height:16px; font-weight:700; }
 .combination-screen { background:#f6f8f5; }
 .combination-content { padding:16px 18px calc(var(--mobile-safe-area-height) + 24px); }
@@ -111,6 +113,10 @@
 .rally-live-top > div strong { display:block; overflow:hidden; margin-top:2px; color:#2e4d32; font-size:14px; line-height:20px; text-overflow:ellipsis; white-space:nowrap; }
 .tennis-app .rally-pause { display:flex; align-items:center; gap:5px; flex:none; min-width:60px; min-height:44px; padding:8px 9px; border:1px solid #d5e1cd; border-radius:11px; background:#fff; color:#386043; font-size:11px; }
 .rally-pause svg { width:16px; height:16px; }
+.rally-feedback { display:flex; flex-direction:column; gap:5px; margin-top:8px; }
+.rally-feedback p { display:grid; grid-template-columns:42px minmax(0,1fr); gap:7px; margin:0; padding:7px 8px; border-radius:9px; background:#ebf2e4; color:#425c45; font-size:11px; line-height:16px; }
+.rally-feedback p:last-child { background:#f1f3ec; color:#5e6d5d; }
+.rally-feedback span { color:#4d714d; font-weight:750; }
 .rally-response { display:-webkit-box; overflow:hidden; -webkit-box-orient:vertical; -webkit-line-clamp:2; margin:8px 0; color:#5b6d59; font-size:12px; line-height:18px; }
 .rally-decision { display:grid; grid-template-columns:auto minmax(0,1fr); align-items:start; gap:8px; padding:8px 9px; border-radius:9px; background:#ebf2e4; }
 .rally-decision span { color:#58734f; font-size:11px; line-height:17px; font-weight:750; }
@@ -118,11 +124,11 @@
 .rally-progress { overflow:hidden; height:3px; margin-top:9px; border-radius:3px; background:#dbe5d5; }
 .rally-progress i { display:block; height:100%; border-radius:inherit; background:#4d8057; transition:width .12s linear; }
 .rally-choice-panel { padding-top:2px; }
-.rally-choice-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:6px; }
-.rally-choice-heading > div { display:flex; align-items:baseline; gap:6px; min-width:0; }
-.rally-choice-heading span { color:#6b7c65; font-size:11px; line-height:16px; font-weight:700; }
-.rally-choice-heading h2 { margin:0; color:#28482f; font-size:15px; line-height:21px; }
-.tennis-app .rally-choice-heading button { display:flex; align-items:center; gap:5px; min-height:44px; padding:7px 9px; border:0; border-radius:9px; background:#f3f6ef; color:#5b705d; font-size:11px; }
+.rally-choice-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:7px; }
+.rally-choice-heading > div { display:block; min-width:0; padding-top:3px; }
+.rally-choice-heading span { display:block; color:#6b7c65; font-size:11px; line-height:16px; font-weight:700; }
+.rally-choice-heading h2 { margin:1px 0 0; color:#28482f; font-size:15px; line-height:20px; }
+.tennis-app .rally-choice-heading button { display:flex; align-items:center; gap:5px; flex:none; min-height:44px; padding:7px 9px; border:0; border-radius:9px; background:#f3f6ef; color:#5b705d; font-size:11px; white-space:nowrap; }
 .rally-choice-heading button svg { width:14px; height:14px; }
 .rally-choice-grid { display:flex; flex-direction:column; gap:6px; }
 .tennis-app .rally-choice-button { position:relative; display:grid; grid-template-columns:auto minmax(0,1fr); align-items:center; column-gap:9px; min-height:62px; padding:8px 32px 8px 10px; border:1px solid #dfe8d9; border-radius:12px; background:#fff; color:#294b32; text-align:left; }
@@ -131,6 +137,35 @@
 .rally-choice-button > strong { grid-column:2; overflow:hidden; font-size:13px; line-height:18px; font-weight:700; text-overflow:ellipsis; white-space:nowrap; }
 .rally-choice-button > small { grid-column:2; display:-webkit-box; overflow:hidden; -webkit-box-orient:vertical; -webkit-line-clamp:2; color:#647364; font-size:11px; line-height:15px; }
 .rally-choice-button > svg { position:absolute; top:50%; right:10px; width:16px; height:16px; color:#758a72; transform:translateY(-50%); }
+.rally-choice-panel.is-scenario { padding-top:0; }
+.rally-signal-strip { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; margin:0 0 7px; }
+.rally-signal-strip > div { min-width:0; min-height:68px; padding:7px 7px 6px; border:1px solid #e2e9dd; border-radius:10px; background:#f7f9f4; }
+.rally-signal-strip dt { margin-bottom:3px; color:#54704f; font-size:11px; line-height:15px; font-weight:750; }
+.rally-signal-strip dd { margin:0; color:#536456; font-size:11px; line-height:15px; overflow-wrap:anywhere; }
+.rally-choice-grid.is-scenario-grid { gap:5px; }
+.tennis-app .rally-choice-button.is-scenario-choice { min-height:49px; padding-top:7px; padding-bottom:7px; background:#fbfcf9; }
+.rally-choice-button.is-scenario-choice > span { grid-row:1; }
+.rally-choice-button.is-scenario-choice > strong { overflow:visible; white-space:normal; text-overflow:clip; }
+.rally-recap-panel { padding-top:1px; }
+.rally-recap-heading { margin-bottom:7px; }
+.rally-recap-heading span { display:block; color:#60745e; font-size:11px; line-height:15px; font-weight:750; }
+.rally-recap-heading h2 { margin:2px 0 0; color:#294a31; font-size:15px; line-height:21px; }
+.rally-recap-list { container-type:inline-size; margin:0 -1px; }
+.rally-recap-track { display:flex; gap:7px; padding:0 1px; }
+.rally-recap-track article { flex:none; width:calc(100cqw - 25px); padding:9px; border:1px solid #dce6d7; border-radius:11px; background:#f7f9f4; }
+.rally-recap-track header { display:flex; align-items:baseline; gap:8px; margin-bottom:7px; }
+.rally-recap-track header span { color:#6c8966; font-size:10px; line-height:14px; font-weight:750; font-variant-numeric:tabular-nums; }
+.rally-recap-track header strong { color:#31533a; font-size:13px; line-height:18px; }
+.rally-recap-track dl { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; margin:0; }
+.rally-recap-track dl div { min-width:0; padding:6px; border-radius:8px; background:#fff; }
+.rally-recap-track dt { margin-bottom:2px; color:#5a7755; font-size:10px; line-height:14px; font-weight:750; }
+.rally-recap-track dd { margin:0; color:#5b6a5c; font-size:11px; line-height:15px; overflow-wrap:anywhere; }
+.rally-recap-track article > p { display:grid; grid-template-columns:auto minmax(0,1fr); gap:7px; margin:7px 0 0; padding-top:7px; border-top:1px solid #e1e8dd; color:#4b614e; font-size:11px; line-height:16px; }
+.rally-recap-track article > p span { color:#537451; font-weight:750; white-space:nowrap; }
+.rally-recap-actions { display:flex; gap:7px; margin-top:7px; }
+.tennis-app .rally-recap-actions button { display:flex; align-items:center; justify-content:center; gap:6px; flex:1; min-height:44px; padding:8px 10px; border:1px solid #d8e3d2; border-radius:11px; background:#f7f9f4; color:#49624d; font-size:11px; font-weight:650; }
+.tennis-app .rally-recap-actions button.is-primary { border-color:#315c3d; background:#315c3d; color:#fff; }
+.rally-recap-actions svg { width:15px; height:15px; }
 .player-screen { position:absolute; inset:0; display:flex; flex-direction:column; overflow:hidden; background:#112c22; }
 .court-display { display:flex; flex-direction:column; flex:1; min-height:0; }
 .court-stage { position:relative; flex:1; min-height:0; }

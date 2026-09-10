@@ -7,6 +7,7 @@ export type Moment = {
   opponent: Point;
   caption: string;
   loft: number;
+  ballHeight?: number;
 };
 
 export type Category = "先稳住" | "拉开空档" | "改变节奏" | "把握机会";
@@ -79,6 +80,28 @@ export type RallyChoice = {
   intent: "稳住" | "进攻" | "变化";
 };
 
+export type RallyObservation = {
+  ball: string;
+  self: string;
+  opponent: string;
+};
+
+export type RallyScenarioChoice = {
+  action: string;
+  nextNodeId: string;
+  intent: "稳住" | "进攻" | "变化";
+  benefit: string;
+  caution: string;
+  excerpt: TacticExcerpt;
+};
+
+export type RallyScenario = {
+  prompt: string;
+  observation: RallyObservation;
+  snapshot: Moment;
+  choices: RallyScenarioChoice[];
+};
+
 export type RallyNode = {
   id: string;
   tacticId: string;
@@ -86,9 +109,13 @@ export type RallyNode = {
   cue: string;
   prompt: string;
   choices: RallyChoice[];
+  scenario?: RallyScenario;
 };
 
 export type InteractiveRally = {
   combinationId: string;
   startNodeId: string;
+  decisionPractice?: {
+    checkpointEvery: number;
+  };
 };

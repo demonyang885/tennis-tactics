@@ -96,6 +96,27 @@ export function validateTennisLibrary(
       assert(choice.signal.trim().length >= 10, `${node.id} choice ${index+1} needs a visible match signal`);
       assert(choice.action.trim().length >= 4, `${node.id} choice ${index+1} needs a clear action`);
     });
+    if(node.scenario){
+      const scenario=node.scenario;
+      assert(scenario.prompt.trim().length >= 8, `${node.id}.scenario needs a clear decision question`);
+      (["ball","self","opponent"] as const).forEach(field=>assert(scenario.observation[field].trim().length >= 6,`${node.id}.scenario.${field} needs a visible fact`));
+      for(const [label,point] of [["ball",scenario.snapshot.ball],["me",scenario.snapshot.me],["opponent",scenario.snapshot.opponent]] as const){
+        assert(point.every(value=>value>=0&&value<=1),`${node.id}.scenario snapshot ${label} is outside the court`);
+      }
+      if(scenario.snapshot.ballHeight!==undefined)assert(scenario.snapshot.ballHeight>=0&&scenario.snapshot.ballHeight<=1.5,`${node.id}.scenario snapshot ball height is outside the supported range`);
+      assert(scenario.snapshot.caption.trim().length >= 8,`${node.id}.scenario snapshot needs a useful caption`);
+      assert(scenario.choices.length >= 2 && scenario.choices.length <= 3,`${node.id}.scenario needs two or three actions`);
+      assert(scenario.choices.some(choice=>choice.intent==="稳住"),`${node.id}.scenario needs at least one steady action`);
+      const actions=new Set<string>();
+      scenario.choices.forEach((choice,index)=>{
+        assert(choice.action.trim().length >= 4,`${node.id}.scenario action ${index+1} needs a clear action`);
+        assert(!actions.has(choice.action),`${node.id}.scenario has duplicate action ${choice.action}`);
+        actions.add(choice.action);
+        assert(choice.benefit.trim().length >= 12,`${node.id}.scenario action ${index+1} needs a useful benefit`);
+        assert(choice.caution.trim().length >= 12,`${node.id}.scenario action ${index+1} needs a useful caution`);
+        assert(Boolean(choice.excerpt),`${node.id}.scenario action ${index+1} needs a focused response excerpt`);
+      });
+    }
     if(node.excerpt){
       const tactic=tactics.find(item=>item.id===node.tacticId)!;
       const from=node.excerpt.fromFrame??0,to=node.excerpt.toFrame??tactic.frames.length-1;
@@ -104,6 +125,15 @@ export function validateTennisLibrary(
   }
   for (const node of rallyNodes) {
     node.choices.forEach(choice=>assert(rallyNodeIds.has(choice.nextNodeId),`${node.id} points to missing rally node ${choice.nextNodeId}`));
+    node.scenario?.choices.forEach(choice=>{
+      assert(rallyNodeIds.has(choice.nextNodeId),`${node.id}.scenario points to missing rally node ${choice.nextNodeId}`);
+      if(choice.excerpt){
+        const destinationNode=rallyNodes.find(item=>item.id===choice.nextNodeId)!;
+        const tactic=tactics.find(item=>item.id===destinationNode.tacticId)!;
+        const from=choice.excerpt.fromFrame??0,to=choice.excerpt.toFrame??tactic.frames.length-1;
+        assert(from>=0&&to<tactic.frames.length&&from<to,`${node.id}.scenario has an invalid ${destinationNode.tacticId} response excerpt`);
+      }
+    });
   }
 
   const interactiveCombinationIds=new Set<string>();
@@ -112,11 +142,25 @@ export function validateTennisLibrary(
     interactiveCombinationIds.add(rally.combinationId);
     assert(combinationIds.has(rally.combinationId),`interactive rally references missing combination ${rally.combinationId}`);
     assert(rallyNodeIds.has(rally.startNodeId),`${rally.combinationId} has missing start node ${rally.startNodeId}`);
+    if(rally.decisionPractice){
+      assert(rally.decisionPractice.checkpointEvery>=2&&rally.decisionPractice.checkpointEvery<=5,`${rally.combinationId} decision checkpoint must be 2–5 choices`);
+      assert(rallyNodes.find(node=>node.id===rally.startNodeId)?.scenario,`${rally.combinationId} decision practice needs a scenario at its start node`);
+      let frontier=new Set([rally.startNodeId]);
+      for(let decision=1;decision<=rally.decisionPractice.checkpointEvery;decision+=1){
+        const next=new Set<string>();
+        frontier.forEach(nodeId=>{
+          const node=rallyNodes.find(item=>item.id===nodeId)!;
+          assert(node.scenario,`${rally.combinationId} decision ${decision} can reach ${nodeId} without a shared scenario`);
+          node.scenario.choices.forEach(choice=>next.add(choice.nextNodeId));
+        });
+        frontier=next;
+      }
+    }
   });
   combinations.forEach(combination=>assert(interactiveCombinationIds.has(combination.id),`${combination.id} has no interactive rally`));
 
   const reachable=new Set<string>(), queue=interactiveRallies.map(rally=>rally.startNodeId);
-  while(queue.length){const id=queue.shift()!;if(reachable.has(id))continue;reachable.add(id);rallyNodes.find(node=>node.id===id)!.choices.forEach(choice=>queue.push(choice.nextNodeId));}
+  while(queue.length){const id=queue.shift()!;if(reachable.has(id))continue;reachable.add(id);const node=rallyNodes.find(node=>node.id===id)!;node.choices.forEach(choice=>queue.push(choice.nextNodeId));node.scenario?.choices.forEach(choice=>queue.push(choice.nextNodeId));}
   rallyNodes.forEach(node=>assert(reachable.has(node.id),`${node.id} is unreachable from every combination start`));
 
   return {
