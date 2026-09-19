@@ -1,3 +1,14 @@
+> **歷史倉庫 — RallyPath 開發入口已統一（2026-09-19）**
+>
+> 唯一開發與發布來源：[demonyang885/tennis-tactics-interactive-preview / main](https://github.com/demonyang885/tennis-tactics-interactive-preview/tree/main)。名稱中的 preview 是歷史命名。
+> 新功能請從該倉庫最新 main 建立分支；本倉庫的 main／feature 分支和下方舊網址僅供歷史參考，不是最新版本。
+> 開工前讀 [SOURCE_OF_TRUTH.md](https://github.com/demonyang885/tennis-tactics-interactive-preview/blob/docs/rallypath-source-of-truth/SOURCE_OF_TRUTH.md)（配套收口 PR 分支；合併後以 main 同檔為準）。
+> 保留本機未提交工作；不要因本文件而 reset、清理或搬移舊 checkout。此提示不等於 GitHub 已技術性封鎖舊庫寫入或部署。
+
+## 接手規則
+
+這是歷史 checkout。RallyPath 新開發請使用上方唯一倉庫；下方模板／產品規則只描述舊快照，不應用來回退正式版本。若本地有新工作，先保存並逐項比對後移植到 canonical main 的新分支。
+
 # Mobile Prototype Agent Guide
 
 ## Current Product Direction — 2026-09-08
